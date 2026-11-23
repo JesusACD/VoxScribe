@@ -1,0 +1,11 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12
+yt-dlp>=2024.10.0
+av>=12,<17
+faster-whisper>=1.1.0
+openai>=1.52.0
+static-ffmpeg>=2.7
+nvidia-cublas-cu12
+nvidia-cudnn-cu12
+python-dotenv>=1.0.1

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoxScribe · Transcriptor de YouTube y Audio con IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" x2="12" y1="19" y2="22"/>
+        </svg>
+      </div>
+      <div>
+        <h1>VoxScribe</h1>
+        <p class="brand-sub">Transcripción de YouTube, Video y Audio con IA</p>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div id="hwBadge" class="hw-badge" title="Estado de aceleración por hardware">
+        <span class="hw-dot"></span>
+        <span id="hwText">Detectando hardware...</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Panel Izquierdo: Configuración + Historial -->
+    <aside class="sidebar">
+      <section class="card">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-source-tab="youtube">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"/><path d="m10 15 5-3-5-3z"/></svg>
+            YouTube / URL
+          </button>
+          <button type="button" class="tab" data-source-tab="file">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            Archivo de Audio/Video
+          </button>
+        </div>
+
+        <!-- Entrada URL -->
+        <div id="paneYoutube" class="source-pane">
+          <label class="field-label" for="urlInput">Enlace del video o audio</label>
+          <div class="input-with-clear">
+            <input
+              id="urlInput"
+              type="url"
+              placeholder="https://www.youtube.com/watch?v=..."
+              autocomplete="off"
+            />
+            <button type="button" id="clearUrlBtn" class="icon-btn hidden" title="Limpiar enlace">&times;</button>
+          </div>
+          <p class="field-hint">Compatible con YouTube, Shorts, directos y cientos de plataformas de video/podcast.</p>
+        </div>
+
+        <!-- Entrada Archivo -->
+        <div id="paneFile" class="source-pane hidden">
+          <div id="dropzone" class="dropzone" tabindex="0">
+            <input
+              id="fileInput"
+              type="file"
+              accept="audio/*,video/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.wma,.opus,.mp4,.mkv,.webm,.mov,.avi"
+              hidden
+            />
+            <div class="dropzone-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            </div>
+            <p class="dropzone-title" id="dropzoneTitle">Arrastra tu audio o video aquí</p>
+            <p class="dropzone-sub" id="dropzoneSub">o haz clic para seleccionar (MP3, WAV, M4A, MP4, MKV, OGG, FLAC...)</p>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Selector de Motor -->
+        <div class="field-group">
+          <label class="field-label">Motor de Transcripción</label>
+          <div class="segmented" id="engineSelector">
+            <button type="button" class="seg-btn active" data-engine="local">IA Local (Gratis)</button>
+            <button type="button" class="seg-btn" data-engine="cloud">API Cloud (Key)</button>
+          </div>
+        </div>
+
+        <!-- Opciones Motor Local -->
+        <div id="localOptions" class="engine-box">
+          <div class="grid-2">
+            <div>
+              <label class="field-label" for="localModel">Modelo Whisper</label>
+              <select id="localModel">
+                <option value="large-v3-turbo" selected>Large v3 Turbo (Recomendado GPU)</option>
+                <option value="small">Small (Equilibrado · 465 MB)</option>
+                <option value="base">Base (Rápido · 145 MB)</option>
+                <option value="tiny">Tiny (Borrador · 75 MB)</option>
+                <option value="medium">Medium (Alta precisión · 1.5 GB)</option>
+                <option value="large-v3">Large v3 (Máxima · 3.1 GB)</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="deviceSelect">Dispositivo</label>
+              <select id="deviceSelect">
+                <option value="auto" selected>Auto (GPU / CPU)</option>
+                <option value="cuda">GPU NVIDIA (CUDA)</option>
+                <option value="cpu">Solo CPU</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="vadCheckbox" />
+            <span>Filtro estricto de silencios VAD (recomendado solo en charlas/podcasts, desactivar en canciones)</span>
+          </label>
+        </div>
+
+        <!-- Opciones Motor Cloud -->
+        <div id="cloudOptions" class="engine-box hidden">
+          <div class="grid-2">
+            <div>
+              <label class="field-label" for="cloudProvider">Proveedor</label>
+              <select id="cloudProvider">
+                <option value="groq" selected>Groq (Ultra rápido)</option>
+                <option value="openai">OpenAI Oficial</option>
+                <option value="custom">OpenAI Compatible</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="cloudModel">Modelo API</label>
+              <select id="cloudModel"></select>
+            </div>
+          </div>
+
+          <div id="customBaseUrlWrap" class="hidden" style="margin-top: 10px;">
+            <label class="field-label" for="customBaseUrl">Base URL personalizada</label>
+            <input id="customBaseUrl" type="url" placeholder="https://api.ejemplo.com/v1" />
+          </div>
+
+          <div style="margin-top: 10px;">
+            <label class="field-label" for="apiKeyInput">
+              API Key <span id="envKeyHint" class="env-pill hidden">Detectada en .env</span>
+            </label>
+            <div class="key-input-wrap">
+              <input id="apiKeyInput" type="password" placeholder="gsk_... o sk-..." autocomplete="off" />
+              <button type="button" id="toggleKeyBtn" class="ghost-sm">Mostrar</button>
+            </div>
+            <p class="field-hint">Se guarda solo en tu navegador local. Archivos &gt;25 MB se dividen automáticamente.</p>
+          </div>
+        </div>
+
+        <!-- Idioma y Tarea -->
+        <div class="grid-2" style="margin-top: 12px;">
+          <div>
+            <label class="field-label" for="languageSelect">Idioma del audio</label>
+            <select id="languageSelect">
+              <option value="auto" selected>Detectar automático</option>
+              <option value="es">Español</option>
+              <option value="en">Inglés</option>
+              <option value="pt">Portugués</option>
+              <option value="fr">Francés</option>
+              <option value="de">Alemán</option>
+              <option value="it">Italiano</option>
+              <option value="ja">Japonés</option>
+              <option value="zh">Chino</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="taskSelect">Acción</label>
+            <select id="taskSelect">
+              <option value="transcribe" selected>Transcribir original</option>
+              <option value="translate">Traducir al inglés</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" id="startBtn" class="btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Transcribir ahora</span>
+          </button>
+          <button type="button" id="cancelBtn" class="btn-danger hidden">Cancelar</button>
+        </div>
+      </section>
+
+      <!-- Historial de Transcripciones -->
+      <section class="card history-card">
+        <div class="section-head">
+          <h2>Historial reciente</h2>
+          <span id="historyCount" class="count-badge">0</span>
+        </div>
+        <div id="historyList" class="history-list">
+          <p class="empty-small">Tus transcripciones aparecerán aquí.</p>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Panel Derecho: Resultado, Reproductor y Exportación -->
+    <section class="workspace">
+      <!-- Estado Vacío Inicial -->
+      <div id="emptyState" class="card empty-hero">
+        <div class="hero-icon">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+          </svg>
+        </div>
+        <h2>Listo para transcribir</h2>
+        <p>Pega un enlace de YouTube o arrastra cualquier archivo de audio o video en el panel izquierdo. Obtendrás el texto en tiempo real sincronizado con el audio y listo para exportar en <strong>TXT, SRT, VTT o JSON</strong>.</p>
+        <div class="feature-chips">
+          <span>GPU Local sin límites</span>
+          <span>Marcas de tiempo interactivas</span>
+          <span>Subtítulos SRT / VTT</span>
+          <span>Soporte OpenAI y Groq</span>
+        </div>
+      </div>
+
+      <!-- Vista Activa / Resultado -->
+      <div id="jobView" class="job-view hidden">
+        <!-- Barra de progreso activa -->
+        <div id="progressBanner" class="card progress-card hidden">
+          <div class="progress-top">
+            <div class="spinner-inline"></div>
+            <span id="stageMessage">Iniciando...</span>
+            <span id="progressPct" class="pct-label">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+          </div>
+          <p class="progress-tip" id="firstModelTip">
+            La primera vez que usas un modelo local se descarga automáticamente en caché (puede tardar 1-2 minutos).
+          </p>
+        </div>
+
+        <!-- Alerta de Error -->
+        <div id="errorBanner" class="card error-card hidden">
+          <div class="error-row">
+            <div>
+              <strong>No se pudo completar la transcripción:</strong>
+              <p id="errorText"></p>
+            </div>
+            <button type="button" id="retryErrorBtn" class="btn-secondary">Reintentar ahora</button>
+          </div>
+        </div>
+
+        <!-- Cabecera de metadatos + Reproductor sincronizado -->
+        <div class="card media-header">
+          <div class="media-info">
+            <img id="jobThumb" class="job-thumb hidden" alt="Miniatura" />
+            <div class="media-meta">
+              <h2 id="jobTitle">Transcripción</h2>
+              <div class="meta-pills" id="metaPills"></div>
+              <div id="notesBox" class="notes-box hidden"></div>
+            </div>
+          </div>
+
+          <div id="playerWrap" class="player-wrap hidden">
+            <audio id="audioPlayer" controls preload="metadata"></audio>
+            <label class="autoscroll-toggle" title="Seguir segmento activo durante la reproducción">
+              <input type="checkbox" id="autoScrollAudio" checked />
+              <span>Seguir lectura</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Barra de herramientas: Vista, Búsqueda, Copiar y Exportar -->
+        <div class="card toolbar-card">
+          <div class="toolbar-left">
+            <div class="segmented compact" id="viewModeSelector">
+              <button type="button" class="seg-btn active" data-view="segments">Marcas de tiempo</button>
+              <button type="button" class="seg-btn" data-view="prose">Texto continuo</button>
+            </div>
+
+            <div class="search-box">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="searchInput" type="search" placeholder="Buscar en el texto..." />
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <button type="button" id="retryToolbarBtn" class="btn-secondary" title="Volver a transcribir este audio con los ajustes seleccionados a la izquierda">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>Re-transcribir</span>
+            </button>
+            <button type="button" id="copyBtn" class="btn-secondary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span id="copyBtnText">Copiar</span>
+            </button>
+
+            <div class="export-group" role="group" aria-label="Exportar transcripción">
+              <span class="export-label">Exportar:</span>
+              <button type="button" class="export-btn" data-fmt="txt" title="Texto plano sin marcas de tiempo">TXT</button>
+              <button type="button" class="export-btn" data-fmt="txt_ts" title="Texto con marcas de tiempo [MM:SS]">TXT+Tiempo</button>
+              <button type="button" class="export-btn" data-fmt="srt" title="Subtítulos SubRip (.srt)">SRT</button>
+              <button type="button" class="export-btn" data-fmt="vtt" title="Subtítulos WebVTT (.vtt)">VTT</button>
+              <button type="button" class="export-btn" data-fmt="json" title="JSON completo con metadatos y segmentos">JSON</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenedor de Transcripción -->
+        <div class="card transcript-card">
+          <div id="segmentsContainer" class="segments-list"></div>
+          <div id="proseContainer" class="prose-view hidden"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
